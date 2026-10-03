@@ -42,5 +42,5 @@ jobs:
       - name: Run complete verification
         run: pnpm check
 
-      - name: Validate release tarball
+      - name: Validate package tarball
         run: pnpm release:pack

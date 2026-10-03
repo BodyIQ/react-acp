@@ -8,7 +8,7 @@ export const manifestPath = resolve(repoRoot, "package.json");
 export const jsrManifestPath = resolve(repoRoot, "jsr.json");
 export const versionSourcePath = resolve(repoRoot, "src/version.ts");
 export const packageName = "@hafbit/react-acp";
-export const repositoryUrl = "git+https://github.com/hafbit/react-acp.git";
+export const repositoryUrl = "git+https://github.com/BodyIQ/react-acp.git";
 
 const releasePattern =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(alpha|beta|rc)\.(0|[1-9]\d*))?$/;
