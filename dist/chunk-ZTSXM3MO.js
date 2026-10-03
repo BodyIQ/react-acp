@@ -1,4 +1,4 @@
-import { createAcpThreadState } from './chunk-EYT2FPQA.js';
+import { createAcpThreadState } from './chunk-YI5O2TG2.js';
 import { useMemo } from 'react';
 import { createRuntimeExtras } from '@assistant-ui/core/react';
 import { jsxs, jsx } from 'react/jsx-runtime';
@@ -230,5 +230,5 @@ function AcpUnsupported({ value, ...props }) {
 }
 
 export { AcpAuthMethods, AcpCommandMenu, AcpConfigOptions, AcpDataPart, AcpDiff, AcpModeSelect, AcpPermissionList, AcpPlan, AcpResource, AcpTerminal, AcpToolArtifact, AcpUnsupported, AcpUsage, acpExtras, useAcpAuth, useAcpCommands, useAcpConfigOptions, useAcpConnection, useAcpModes, useAcpPermissions, useAcpPlan, useAcpRuntimeExtras, useAcpSession, useAcpThreadState, useAcpUsage };
-//# sourceMappingURL=chunk-TU6M3KCB.js.map
-//# sourceMappingURL=chunk-TU6M3KCB.js.map
+//# sourceMappingURL=chunk-ZTSXM3MO.js.map
+//# sourceMappingURL=chunk-ZTSXM3MO.js.map

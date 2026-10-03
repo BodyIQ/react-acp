@@ -1,3 +1,4 @@
+import { terminalToolDisplay } from "./tool-data";
 import type {
   AgentCapabilities,
   SessionNotification,
@@ -227,7 +228,7 @@ const reduceNotification = (
           update,
           messageId,
           notification,
-          extensions?.toolDisplay?.(notification),
+          extensions?.toolDisplay?.(notification) ?? terminalToolDisplay(notification),
         ),
       };
       const alreadyLinked = current.messages

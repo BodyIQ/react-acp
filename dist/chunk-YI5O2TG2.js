@@ -46,6 +46,67 @@ var AcpInvalidWorkspaceError = class extends AcpError {
   }
 };
 
+// src/core/tool-data.ts
+function record(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
+}
+function text(value) {
+  return typeof value === "string" ? value : void 0;
+}
+function command(value) {
+  return Array.isArray(value) && value.every((part) => typeof part === "string") ? value.join(" ") : text(value);
+}
+var terminalToolDisplay = (notification) => {
+  const meta = record(notification.update._meta);
+  const outputDelta = ["terminal_output_delta", "terminal_output", "mcp_output_delta"].map((key) => text(record(meta[key]).data)).filter((chunk) => chunk !== void 0).join("") || void 0;
+  const cwd = text(record(meta.terminal_info).cwd);
+  const code = record(meta.terminal_exit).exit_code;
+  const exitCode = typeof code === "number" ? code : void 0;
+  return outputDelta || cwd || exitCode !== void 0 ? { outputDelta, cwd, exitCode } : void 0;
+};
+function readableContent(value) {
+  const texts = [];
+  const diffs = [];
+  for (const item of Array.isArray(value) ? value : []) {
+    const part = record(item);
+    if (part.type === "diff" && typeof part.path === "string" && typeof part.newText === "string") {
+      diffs.push({ path: part.path, oldText: text(part.oldText) ?? null, newText: part.newText });
+    } else {
+      const content = part.type === "content" ? record(part.content) : part;
+      if (content.type === "text" && typeof content.text === "string") texts.push(content.text);
+    }
+  }
+  return { texts, diffs };
+}
+function acpToolData(artifact, argsValue, result) {
+  const acp = record(record(artifact).acp);
+  const args = record(argsValue);
+  const display = record(acp.display);
+  const content = readableContent(acp.content);
+  const fallbackContent = readableContent(record(result).content ?? result);
+  const exitCode = typeof display.exitCode === "number" ? display.exitCode : void 0;
+  const cwd = text(args.cwd) ?? text(display.cwd);
+  const rawResult = record(result);
+  const streams = [text(rawResult.stdout), text(rawResult.stderr)].filter(
+    (stream) => stream !== void 0
+  );
+  const resultText = text(result) ?? (streams.length > 0 ? streams.join("") : text(rawResult.output));
+  return {
+    title: text(acp.title),
+    command: command(args.command) ?? command(args.cmd),
+    path: text(args.path) ?? text(args.file_path) ?? text(args.filePath),
+    query: text(args.query) ?? text(args.pattern),
+    cwd,
+    exitCode: exitCode ?? (typeof rawResult.exit_code === "number" ? rawResult.exit_code : void 0),
+    locations: (Array.isArray(acp.locations) ? acp.locations : []).flatMap((location) => {
+      const path = text(record(location).path);
+      return path === void 0 ? [] : [path];
+    }),
+    output: text(display.output) || (content.texts.length > 0 ? content.texts.join("\n") : resultText ?? fallbackContent.texts.join("\n")),
+    diffs: content.diffs.length > 0 ? content.diffs : fallbackContent.diffs
+  };
+}
+
 // src/core/state.ts
 var createAcpThreadState = () => ({
   connectionStatus: "idle",
@@ -192,7 +253,7 @@ var reduceNotification = (session, notification, extensions) => {
           update,
           messageId,
           notification,
-          extensions?.toolDisplay?.(notification)
+          extensions?.toolDisplay?.(notification) ?? terminalToolDisplay(notification)
         )
       };
       const alreadyLinked = current.messages.find((message) => message.id === messageId)?.pieces.some((piece) => piece.type === "tool" && piece.toolCallId === update.toolCallId);
@@ -1892,67 +1953,6 @@ var AcpThreadController = class {
   }
 };
 
-// src/core/tool-data.ts
-function record(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
-}
-function text(value) {
-  return typeof value === "string" ? value : void 0;
-}
-function command(value) {
-  return Array.isArray(value) && value.every((part) => typeof part === "string") ? value.join(" ") : text(value);
-}
-var codexToolDisplay = (notification) => {
-  const meta = record(notification.update._meta);
-  const outputDelta = ["terminal_output_delta", "terminal_output", "mcp_output_delta"].map((key) => text(record(meta[key]).data)).filter((chunk) => chunk !== void 0).join("") || void 0;
-  const cwd = text(record(meta.terminal_info).cwd);
-  const code = record(meta.terminal_exit).exit_code;
-  const exitCode = typeof code === "number" ? code : void 0;
-  return outputDelta || cwd || exitCode !== void 0 ? { outputDelta, cwd, exitCode } : void 0;
-};
-function readableContent(value) {
-  const texts = [];
-  const diffs = [];
-  for (const item of Array.isArray(value) ? value : []) {
-    const part = record(item);
-    if (part.type === "diff" && typeof part.path === "string" && typeof part.newText === "string") {
-      diffs.push({ path: part.path, oldText: text(part.oldText) ?? null, newText: part.newText });
-    } else {
-      const content = part.type === "content" ? record(part.content) : part;
-      if (content.type === "text" && typeof content.text === "string") texts.push(content.text);
-    }
-  }
-  return { texts, diffs };
-}
-function acpToolData(artifact, argsValue, result) {
-  const acp = record(record(artifact).acp);
-  const args = record(argsValue);
-  const display = record(acp.display);
-  const content = readableContent(acp.content);
-  const fallbackContent = readableContent(record(result).content ?? result);
-  const exitCode = typeof display.exitCode === "number" ? display.exitCode : void 0;
-  const cwd = text(args.cwd) ?? text(display.cwd);
-  const rawResult = record(result);
-  const streams = [text(rawResult.stdout), text(rawResult.stderr)].filter(
-    (stream) => stream !== void 0
-  );
-  const resultText = text(result) ?? (streams.length > 0 ? streams.join("") : text(rawResult.output));
-  return {
-    title: text(acp.title),
-    command: command(args.command) ?? command(args.cmd),
-    path: text(args.path) ?? text(args.file_path) ?? text(args.filePath),
-    query: text(args.query) ?? text(args.pattern),
-    cwd,
-    exitCode: exitCode ?? (typeof rawResult.exit_code === "number" ? rawResult.exit_code : void 0),
-    locations: (Array.isArray(acp.locations) ? acp.locations : []).flatMap((location) => {
-      const path = text(record(location).path);
-      return path === void 0 ? [] : [path];
-    }),
-    output: text(display.output) || (content.texts.length > 0 ? content.texts.join("\n") : resultText ?? fallbackContent.texts.join("\n")),
-    diffs: content.diffs.length > 0 ? content.diffs : fallbackContent.diffs
-  };
-}
-
-export { AcpCapabilityError, AcpError, AcpInvalidWorkspaceError, AcpProjectionCache, AcpThreadController, AcpUnsupportedContentError, SdkAcpClientAdapter, acpToolData, buildClientCapabilities, buildSessionRequest, codexToolDisplay, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, validateWorkspace };
-//# sourceMappingURL=chunk-EYT2FPQA.js.map
-//# sourceMappingURL=chunk-EYT2FPQA.js.map
+export { AcpCapabilityError, AcpError, AcpInvalidWorkspaceError, AcpProjectionCache, AcpThreadController, AcpUnsupportedContentError, SdkAcpClientAdapter, acpToolData, buildClientCapabilities, buildSessionRequest, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, terminalToolDisplay, validateWorkspace };
+//# sourceMappingURL=chunk-YI5O2TG2.js.map
+//# sourceMappingURL=chunk-YI5O2TG2.js.map

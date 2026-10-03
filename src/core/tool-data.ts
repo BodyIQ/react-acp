@@ -21,8 +21,9 @@ function command(value: unknown): string | undefined {
 /** A file edit decoded from ACP tool content. */
 export type ToolDiff = { path: string; oldText: string | null; newText: string };
 
-/** Interpret Codex's tool output extension once per ACP update. */
-export const codexToolDisplay: NonNullable<AcpRuntimeExtensionAdapter["toolDisplay"]> = (
+/** Decode terminal-output metadata used by ACP agents including Codex and Claude.
+ * This extension is separate from the standard client-owned terminal service. */
+export const terminalToolDisplay: NonNullable<AcpRuntimeExtensionAdapter["toolDisplay"]> = (
   notification,
 ) => {
   const meta = record(notification.update._meta);

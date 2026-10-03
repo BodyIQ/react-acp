@@ -188,8 +188,9 @@ type ToolDiff = {
     oldText: string | null;
     newText: string;
 };
-/** Interpret Codex's tool output extension once per ACP update. */
-declare const codexToolDisplay: NonNullable<AcpRuntimeExtensionAdapter["toolDisplay"]>;
+/** Decode terminal-output metadata used by ACP agents including Codex and Claude.
+ * This extension is separate from the standard client-owned terminal service. */
+declare const terminalToolDisplay: NonNullable<AcpRuntimeExtensionAdapter["toolDisplay"]>;
 /** Decode the ACP artifact that react-acp preserves on an assistant-ui part. */
 declare function acpToolData(artifact: unknown, argsValue: unknown, result: unknown): {
     title: string | undefined;
@@ -203,4 +204,4 @@ declare function acpToolData(artifact: unknown, argsValue: unknown, result: unkn
     diffs: ToolDiff[];
 };
 
-export { AcpAdapterConnectOptions, AcpCapabilityError, AcpClientAdapter, AcpClientConnection, AcpClientServices, AcpError, AcpInvalidWorkspaceError, AcpMessageRecord, AcpProjectedMessage, AcpProjectionCache, AcpRuntimeExtensionAdapter, AcpRuntimeOptions, AcpSessionState, AcpStateEvent, AcpStreamFactory, AcpTerminalServices, AcpThreadController, AcpThreadState, AcpUnsupportedContentError, AcpWorkspace, SdkAcpClientAdapter, type ToolDiff, acpToolData, buildClientCapabilities, buildSessionRequest, codexToolDisplay, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, validateWorkspace };
+export { AcpAdapterConnectOptions, AcpCapabilityError, AcpClientAdapter, AcpClientConnection, AcpClientServices, AcpError, AcpInvalidWorkspaceError, AcpMessageRecord, AcpProjectedMessage, AcpProjectionCache, AcpRuntimeExtensionAdapter, AcpRuntimeOptions, AcpSessionState, AcpStateEvent, AcpStreamFactory, AcpTerminalServices, AcpThreadController, AcpThreadState, AcpUnsupportedContentError, AcpWorkspace, SdkAcpClientAdapter, type ToolDiff, acpToolData, buildClientCapabilities, buildSessionRequest, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, terminalToolDisplay, validateWorkspace };

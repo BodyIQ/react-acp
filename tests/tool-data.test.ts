@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import type { SessionNotification } from "@agentclientprotocol/sdk";
-import { acpToolData, codexToolDisplay } from "../src/core/tool-data";
+import { acpToolData, terminalToolDisplay } from "../src/core/tool-data";
 
 const notification = (meta: Record<string, unknown>): SessionNotification => ({
   sessionId: "history",
@@ -79,14 +79,14 @@ test("edits retain complete before and after text, including new and empty files
   );
 });
 
-test("Codex output metadata is decoded once per notification", () => {
-  assert.deepEqual(codexToolDisplay(notification({ terminal_info: { cwd: "/repo" } })), {
+test("Agent terminal output metadata is decoded once per notification", () => {
+  assert.deepEqual(terminalToolDisplay(notification({ terminal_info: { cwd: "/repo" } })), {
     outputDelta: undefined,
     cwd: "/repo",
     exitCode: undefined,
   });
   assert.deepEqual(
-    codexToolDisplay(
+    terminalToolDisplay(
       notification({ terminal_output_delta: { data: "hello" }, terminal_exit: { exit_code: 0 } }),
     ),
     {
@@ -95,12 +95,12 @@ test("Codex output metadata is decoded once per notification", () => {
       exitCode: 0,
     },
   );
-  assert.deepEqual(codexToolDisplay(notification({ mcp_output_delta: { data: "progress" } })), {
+  assert.deepEqual(terminalToolDisplay(notification({ mcp_output_delta: { data: "progress" } })), {
     outputDelta: "progress",
     cwd: undefined,
     exitCode: undefined,
   });
-  assert.equal(codexToolDisplay(notification({})), undefined);
+  assert.equal(terminalToolDisplay(notification({})), undefined);
 });
 
 test("partial and unknown artifacts cannot turn protocol objects into output", () => {

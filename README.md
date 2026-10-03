@@ -3,9 +3,11 @@
 BodyIQ maintains this fork for Zinnia as a dependency pinned to a Git commit.
 It batches `session/load` replay before publishing state and supports incremental
 tool display data through `AcpRuntimeExtensionAdapter.toolDisplay`. This fork
-exports `codexToolDisplay` for decoding Codex output metadata and `acpToolData`
-for reading tool artifacts in renderers from `@hafbit/react-acp/core`. Configure
-`extensions: { toolDisplay: codexToolDisplay }` to enable the Codex decoder. It
+decodes the terminal-output metadata convention used by Codex and Claude by default.
+Standard ACP text/diff content remains available through `acpToolData`, exported
+from `@hafbit/react-acp/core`. No agent-specific hook is needed in the app.
+The metadata extension is separate from ACP's client-owned `terminal/*` service;
+that service is advertised only when a host supplies complete terminal handlers. It
 does not publish the upstream npm or JSR packages; the registry installation
 instructions below refer to upstream releases.
 The generated `dist/` files are committed with source changes so a Git install

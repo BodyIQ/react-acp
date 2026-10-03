@@ -231,3 +231,53 @@ describe("ACP message projection", () => {
     expect(JSON.stringify(projected[0]?.metadata?.custom?.acp)).toContain('"extension"');
   });
 });
+
+it("projects standard ACP text without any agent extension", async () => {
+  const { acpToolData } = await import("../src/core/tool-data");
+  let state = createAcpThreadState();
+  state = reduceAcpThreadState(state, {
+    type: "session.update",
+    notification: {
+      sessionId: "standard",
+      update: {
+        sessionUpdate: "tool_call",
+        toolCallId: "call",
+        title: "Run",
+        kind: "execute",
+        status: "completed",
+        content: [{ type: "content", content: { type: "text", text: "standard output" } }],
+      },
+    },
+  });
+  expect(state.sessions.standard?.tools.call?.value?.content).toEqual([
+    { type: "content", content: { type: "text", text: "standard output" } },
+  ]);
+  expect(
+    acpToolData({ acp: state.sessions.standard?.tools.call?.value }, {}, undefined).output,
+  ).toBe("standard output");
+});
+
+it.each(["terminal_output", "terminal_output_delta"])(
+  "collects %s without app configuration",
+  (key) => {
+    let state = createAcpThreadState();
+    for (const data of ["hello", " world"]) {
+      state = reduceAcpThreadState(state, {
+        type: "session.update",
+        notification: {
+          sessionId: "agent",
+          update: {
+            sessionUpdate: "tool_call_update",
+            toolCallId: "call",
+            _meta: { [key]: { terminal_id: "term", data }, terminal_exit: { exit_code: 0 } },
+          },
+        },
+      });
+    }
+    expect(state.sessions.agent?.tools.call?.display).toEqual({
+      output: "hello world",
+      exitCode: 0,
+      cwd: undefined,
+    });
+  },
+);
