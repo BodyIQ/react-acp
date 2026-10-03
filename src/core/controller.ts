@@ -125,7 +125,7 @@ export class AcpThreadController {
   private readonly permissionWaiters = new Map<string, PermissionWaiter>();
   private readonly attachedSessions = new Set<string>();
   private readonly attachmentPromises = new Map<string, Promise<void>>();
-  private readonly loadingSessions = new Set<string>();
+  private readonly loadingSessions = new Map<string, SessionNotification[]>();
   private readonly pendingOutbound = new Map<string, PendingOutbound>();
   private prepareSessionPromise?: Promise<string>;
   private connectionGeneration = 0;
@@ -584,7 +584,10 @@ export class AcpThreadController {
     }
 
     this.dispatch({ type: "session.loading", sessionId, clearHistory: !useResume });
-    this.loadingSessions.add(sessionId);
+    // session/load replays history. Apply it before one state publication so
+    // subscribers do not re-project the entire transcript for every chunk.
+    const replay: SessionNotification[] | undefined = useResume ? undefined : [];
+    if (replay) this.loadingSessions.set(sessionId, replay);
     try {
       const response = await this.runAgentRequest(() =>
         useResume
@@ -594,6 +597,14 @@ export class AcpThreadController {
       if (generation !== this.connectionGeneration) {
         throw new AcpError("ACP_DISCONNECTED", "ACP connection changed while attaching a session.");
       }
+      for (const notification of replay ?? []) {
+        this.state = reduceAcpThreadState(
+          this.state,
+          { type: "session.update", notification },
+          this.options.extensions,
+        );
+      }
+      if (replay) this.loadingSessions.delete(sessionId);
       this.attachedSessions.add(sessionId);
       this.dispatch({
         type: "session.attached",
@@ -611,7 +622,9 @@ export class AcpThreadController {
       }
       throw error;
     } finally {
-      this.loadingSessions.delete(sessionId);
+      if (replay && this.loadingSessions.get(sessionId) === replay) {
+        this.loadingSessions.delete(sessionId);
+      }
     }
   }
 
@@ -728,6 +741,11 @@ export class AcpThreadController {
   private handleSessionUpdate(generation: number, notification: SessionNotification): void {
     if (generation !== this.connectionGeneration) return;
     const sessionId = notification.sessionId;
+    const replay = this.loadingSessions.get(sessionId);
+    if (replay) {
+      replay.push(notification);
+      return;
+    }
     if (
       !this.attachedSessions.has(sessionId) &&
       !this.loadingSessions.has(sessionId) &&

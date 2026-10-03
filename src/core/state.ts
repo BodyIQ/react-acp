@@ -13,6 +13,7 @@ import type {
   AcpStateEvent,
   AcpThreadState,
   AcpToolCallRecord,
+  AcpToolDisplayUpdate,
 } from "./types";
 
 /** Creates the empty, disconnected ACP thread repository. */
@@ -156,13 +157,22 @@ const mergeTool = (
   incoming: ToolCall | ToolCallUpdate,
   messageId: string,
   notification?: SessionNotification,
+  displayUpdate?: AcpToolDisplayUpdate,
 ): AcpToolCallRecord => {
   const value = existing ? { ...existing.value, ...incoming } : incoming;
+  const display = displayUpdate
+    ? {
+        output: (existing?.display?.output ?? "") + (displayUpdate.outputDelta ?? ""),
+        cwd: displayUpdate.cwd ?? existing?.display?.cwd,
+        exitCode: displayUpdate.exitCode ?? existing?.display?.exitCode,
+      }
+    : existing?.display;
   return {
     toolCallId: incoming.toolCallId,
     messageId,
     value,
     ...(existing?.permission ? { permission: existing.permission } : {}),
+    ...(display ? { display } : {}),
     rawNotifications: notification
       ? [...(existing?.rawNotifications ?? []), notification]
       : (existing?.rawNotifications ?? []),
@@ -212,7 +222,13 @@ const reduceNotification = (
       const existing = current.tools[update.toolCallId];
       const nextTools = {
         ...current.tools,
-        [update.toolCallId]: mergeTool(existing, update, messageId, notification),
+        [update.toolCallId]: mergeTool(
+          existing,
+          update,
+          messageId,
+          notification,
+          extensions?.toolDisplay?.(notification),
+        ),
       };
       const alreadyLinked = current.messages
         .find((message) => message.id === messageId)

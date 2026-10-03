@@ -155,6 +155,7 @@ function projectTool(tool: AcpToolCallRecord): ProjectedPart {
         locations: value.locations,
         rawInput,
         rawOutput,
+        display: tool.display,
         rawNotifications: tool.rawNotifications,
       },
     },

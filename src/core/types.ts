@@ -270,6 +270,22 @@ export type AcpToolCallRecord = {
   permission?: AcpPermissionRecord;
   /** Tool call notifications in arrival order. */
   rawNotifications: readonly SessionNotification[];
+  /** Application-provided display data accumulated as tool updates arrive. */
+  display?: AcpToolDisplay;
+};
+
+/** Display fields an application may derive from an agent's tool metadata. */
+export type AcpToolDisplay = {
+  output: string;
+  cwd?: string;
+  exitCode?: number;
+};
+
+/** One incremental display update; outputDelta is appended in arrival order. */
+export type AcpToolDisplayUpdate = {
+  outputDelta?: string;
+  cwd?: string;
+  exitCode?: number;
 };
 
 /** Lifecycle state for an ACP tool permission request. */
@@ -306,6 +322,8 @@ export type AcpRuntimeExtensionAdapter = {
   messagePhase?(notification: SessionNotification): string | undefined;
   /** Recovers authoritative message lifecycle fields from opaque notification metadata. */
   messageState?(notification: SessionNotification): AcpMessageStatePatch | undefined;
+  /** Interprets agent-specific tool output metadata once when an update arrives. */
+  toolDisplay?(notification: SessionNotification): AcpToolDisplayUpdate | undefined;
 };
 
 /** Protocol-authoritative state retained for one ACP session. */

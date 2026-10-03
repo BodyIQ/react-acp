@@ -133,6 +133,43 @@ describe("ACP message projection", () => {
     });
   });
 
+  it("accumulates application tool output once and exposes it in the projected artifact", () => {
+    const extensions = {
+      toolDisplay: (notification: { update: { _meta?: unknown } }) => {
+        const meta = notification.update._meta as { chunk?: string; exitCode?: number } | undefined;
+        return meta ? { outputDelta: meta.chunk, exitCode: meta.exitCode } : undefined;
+      },
+    };
+    let state = createAcpThreadState();
+    for (const update of [
+      { sessionUpdate: "tool_call", toolCallId: "exec", title: "Run", status: "pending" },
+      { sessionUpdate: "tool_call_update", toolCallId: "exec", _meta: { chunk: "hello " } },
+      {
+        sessionUpdate: "tool_call_update",
+        toolCallId: "exec",
+        _meta: { chunk: "world", exitCode: 0 },
+        status: "completed",
+      },
+    ]) {
+      state = reduceAcpThreadState(
+        state,
+        {
+          type: "session.update",
+          notification: { sessionId: "s1", update: update as never },
+        },
+        extensions,
+      );
+    }
+    expect(state.sessions.s1?.tools.exec?.display).toEqual({
+      output: "hello world",
+      cwd: undefined,
+      exitCode: 0,
+    });
+    expect(projectAcpThreadMessages(state, "s1")[0]?.content[0]).toMatchObject({
+      artifact: { acp: { display: { output: "hello world", exitCode: 0 } } },
+    });
+  });
+
   it("按消息和 session 归属保留完整 notification，不复制 session 全量日志", () => {
     let state = createAcpThreadState();
     const messageNotification = {

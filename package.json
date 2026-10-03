@@ -4,11 +4,11 @@
   "description": "Transport-agnostic ACP v1 runtime adapter for assistant-ui, with React hooks and headless primitives.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hafbit/react-acp.git"
+    "url": "git+https://github.com/BodyIQ/react-acp.git"
   },
-  "homepage": "https://github.com/hafbit/react-acp#readme",
+  "homepage": "https://github.com/BodyIQ/react-acp#readme",
   "bugs": {
-    "url": "https://github.com/hafbit/react-acp/issues"
+    "url": "https://github.com/BodyIQ/react-acp/issues"
   },
   "type": "module",
   "license": "MIT",
@@ -40,6 +40,7 @@
   "packageManager": "pnpm@10.15.1",
   "scripts": {
     "build": "tsup",
+    "prepare": "pnpm build",
     "docs:check": "node scripts/check-jsr-docs.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
