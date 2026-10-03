@@ -182,4 +182,25 @@ declare class AcpThreadController {
     private requireConnection;
 }
 
-export { AcpAdapterConnectOptions, AcpCapabilityError, AcpClientAdapter, AcpClientConnection, AcpClientServices, AcpError, AcpInvalidWorkspaceError, AcpMessageRecord, AcpProjectedMessage, AcpProjectionCache, AcpRuntimeExtensionAdapter, AcpRuntimeOptions, AcpSessionState, AcpStateEvent, AcpStreamFactory, AcpTerminalServices, AcpThreadController, AcpThreadState, AcpUnsupportedContentError, AcpWorkspace, SdkAcpClientAdapter, buildClientCapabilities, buildSessionRequest, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, validateWorkspace };
+/** A file edit decoded from ACP tool content. */
+type ToolDiff = {
+    path: string;
+    oldText: string | null;
+    newText: string;
+};
+/** Interpret Codex's tool output extension once per ACP update. */
+declare const codexToolDisplay: NonNullable<AcpRuntimeExtensionAdapter["toolDisplay"]>;
+/** Decode the ACP artifact that react-acp preserves on an assistant-ui part. */
+declare function acpToolData(artifact: unknown, argsValue: unknown, result: unknown): {
+    title: string | undefined;
+    command: string | undefined;
+    path: string | undefined;
+    query: string | undefined;
+    cwd: string | undefined;
+    exitCode: number | undefined;
+    locations: string[];
+    output: string;
+    diffs: ToolDiff[];
+};
+
+export { AcpAdapterConnectOptions, AcpCapabilityError, AcpClientAdapter, AcpClientConnection, AcpClientServices, AcpError, AcpInvalidWorkspaceError, AcpMessageRecord, AcpProjectedMessage, AcpProjectionCache, AcpRuntimeExtensionAdapter, AcpRuntimeOptions, AcpSessionState, AcpStateEvent, AcpStreamFactory, AcpTerminalServices, AcpThreadController, AcpThreadState, AcpUnsupportedContentError, AcpWorkspace, SdkAcpClientAdapter, type ToolDiff, acpToolData, buildClientCapabilities, buildSessionRequest, codexToolDisplay, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, validateWorkspace };

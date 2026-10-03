@@ -3,6 +3,9 @@
 BodyIQ maintains this fork for Zinnia as a dependency pinned to a Git commit.
 It batches `session/load` replay before publishing state and supports incremental
 tool display data through `AcpRuntimeExtensionAdapter.toolDisplay`. This fork
+exports `codexToolDisplay` for decoding Codex output metadata and `acpToolData`
+for reading tool artifacts in renderers from `@hafbit/react-acp/core`. Configure
+`extensions: { toolDisplay: codexToolDisplay }` to enable the Codex decoder. It
 does not publish the upstream npm or JSR packages; the registry installation
 instructions below refer to upstream releases.
 The generated `dist/` files are committed with source changes so a Git install
