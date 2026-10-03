@@ -1,3 +1,4 @@
+import { terminalToolDisplay } from "./tool-data";
 import type {
   AgentCapabilities,
   SessionNotification,
@@ -13,6 +14,7 @@ import type {
   AcpStateEvent,
   AcpThreadState,
   AcpToolCallRecord,
+  AcpToolDisplayUpdate,
 } from "./types";
 
 /** Creates the empty, disconnected ACP thread repository. */
@@ -116,6 +118,7 @@ const appendPiece = (session: AcpSessionState, messageId: string, piece: AcpMess
   patchMessage(session, messageId, (message) => ({
     ...message,
     pieces: [...message.pieces, piece],
+    ...(message.role === "assistant" ? { status: { type: "running" as const } } : {}),
   }));
 
 const appendMessageNotification = (
@@ -156,13 +159,22 @@ const mergeTool = (
   incoming: ToolCall | ToolCallUpdate,
   messageId: string,
   notification?: SessionNotification,
+  displayUpdate?: AcpToolDisplayUpdate,
 ): AcpToolCallRecord => {
   const value = existing ? { ...existing.value, ...incoming } : incoming;
+  const display = displayUpdate
+    ? {
+        output: (existing?.display?.output ?? "") + (displayUpdate.outputDelta ?? ""),
+        cwd: displayUpdate.cwd ?? existing?.display?.cwd,
+        exitCode: displayUpdate.exitCode ?? existing?.display?.exitCode,
+      }
+    : existing?.display;
   return {
     toolCallId: incoming.toolCallId,
     messageId,
     value,
     ...(existing?.permission ? { permission: existing.permission } : {}),
+    ...(display ? { display } : {}),
     rawNotifications: notification
       ? [...(existing?.rawNotifications ?? []), notification]
       : (existing?.rawNotifications ?? []),
@@ -212,7 +224,13 @@ const reduceNotification = (
       const existing = current.tools[update.toolCallId];
       const nextTools = {
         ...current.tools,
-        [update.toolCallId]: mergeTool(existing, update, messageId, notification),
+        [update.toolCallId]: mergeTool(
+          existing,
+          update,
+          messageId,
+          notification,
+          extensions?.toolDisplay?.(notification) ?? terminalToolDisplay(notification),
+        ),
       };
       const alreadyLinked = current.messages
         .find((message) => message.id === messageId)
@@ -383,6 +401,27 @@ export function reduceAcpThreadState(
         ...(event.modes !== undefined ? { modes: event.modes } : {}),
         access: event.access ?? { mode: "read-write" },
         configOptions: event.configOptions ?? session.configOptions,
+        // A completed history replay is not an actively streaming response.
+        // Keep unfinished tools live, and retain explicit completion/error states.
+        messages: event.historyLoaded
+          ? session.messages.map((message) => {
+              const unfinished = message.pieces.some(
+                (piece) =>
+                  piece.type === "tool" &&
+                  ["pending", "in_progress"].includes(
+                    session.tools[piece.toolCallId]?.value.status ?? "",
+                  ),
+              );
+              return message.role === "assistant" &&
+                message.status?.type === "running" &&
+                !unfinished
+                ? {
+                    ...message,
+                    status: { type: "complete" as const, stopReason: "end_turn" as const },
+                  }
+                : message;
+            })
+          : session.messages,
         runState: "idle",
         error: undefined,
       }));

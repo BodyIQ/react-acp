@@ -1,8 +1,21 @@
 # react-acp
 
+BodyIQ maintains this fork for Zinnia as a dependency pinned to a Git commit.
+It batches `session/load` replay before publishing state and supports incremental
+tool display data through `AcpRuntimeExtensionAdapter.toolDisplay`. This fork
+decodes the terminal-output metadata convention used by Codex and Claude by default.
+Standard ACP text/diff content remains available through `acpToolData`, exported
+from `@hafbit/react-acp/core`. No agent-specific hook is needed in the app.
+The metadata extension is separate from ACP's client-owned `terminal/*` service;
+that service is advertised only when a host supplies complete terminal handlers. It
+does not publish the upstream npm or JSR packages; the registry installation
+instructions below refer to upstream releases.
+The generated `dist/` files are committed with source changes so a Git install
+uses the same JavaScript and TypeScript declarations in every environment.
+
 `react-acp` 将 [Agent Client Protocol (ACP)](https://agentclientprotocol.com/) 会话投影为 [assistant-ui](https://www.assistant-ui.com/) runtime。ACP session 是线程权威来源；消息、推理、工具调用、权限、计划、模式、配置与用量由协议事件驱动。
 
-> 当前状态：`0.1.2` 开发版。兼容承诺覆盖官方 TypeScript SDK 标记为稳定的 ACP v1 API；实验 API 与 ACP v2 Draft 不在承诺范围内。
+> 当前状态：`0.1.9`。兼容承诺覆盖官方 TypeScript SDK 标记为稳定的 ACP v1 API；实验 API 与 ACP v2 Draft 不在承诺范围内。
 
 ## 安装
 

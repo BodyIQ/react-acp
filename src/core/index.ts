@@ -12,3 +12,4 @@ export * from "./projection";
 export * from "./serialize";
 export * from "./sdk-adapter";
 export * from "./controller";
+export * from "./tool-data";

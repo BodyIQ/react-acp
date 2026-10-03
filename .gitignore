@@ -3,7 +3,6 @@
 .pnpm-store/
 coverage/
 deno.lock
-dist/
 examples/vite/dist/
 node_modules/
 playwright-report/
