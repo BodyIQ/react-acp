@@ -5,6 +5,8 @@ It batches `session/load` replay before publishing state and supports incrementa
 tool display data through `AcpRuntimeExtensionAdapter.toolDisplay`. This fork
 does not publish the upstream npm or JSR packages; the registry installation
 instructions below refer to upstream releases.
+The generated `dist/` files are committed with source changes so a Git install
+uses the same JavaScript and TypeScript declarations in every environment.
 
 `react-acp` 将 [Agent Client Protocol (ACP)](https://agentclientprotocol.com/) 会话投影为 [assistant-ui](https://www.assistant-ui.com/) runtime。ACP session 是线程权威来源；消息、推理、工具调用、权限、计划、模式、配置与用量由协议事件驱动。
 
