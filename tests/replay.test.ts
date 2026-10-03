@@ -58,6 +58,7 @@ it("publishes session/load history once, then streams live updates", async () =>
   finishLoad.resolve();
   await loading;
   expect(projectAcpThreadMessages(controller.getState())).toHaveLength(2);
+  expect(projectAcpThreadMessages(controller.getState())[1]?.status?.type).toBe("complete");
   expect(snapshots.filter((snapshot) => snapshot.length === 2)).toHaveLength(1);
 
   const published = snapshots.length;
@@ -66,6 +67,7 @@ it("publishes session/load history once, then streams live updates", async () =>
     update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "live" } },
   });
   expect(snapshots).toHaveLength(published + 1);
+  expect(projectAcpThreadMessages(controller.getState())[1]?.status?.type).toBe("running");
   controller.dispose();
 });
 

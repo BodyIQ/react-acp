@@ -118,6 +118,7 @@ const appendPiece = (session: AcpSessionState, messageId: string, piece: AcpMess
   patchMessage(session, messageId, (message) => ({
     ...message,
     pieces: [...message.pieces, piece],
+    ...(message.role === "assistant" ? { status: { type: "running" as const } } : {}),
   }));
 
 const appendMessageNotification = (
@@ -400,6 +401,27 @@ export function reduceAcpThreadState(
         ...(event.modes !== undefined ? { modes: event.modes } : {}),
         access: event.access ?? { mode: "read-write" },
         configOptions: event.configOptions ?? session.configOptions,
+        // A completed history replay is not an actively streaming response.
+        // Keep unfinished tools live, and retain explicit completion/error states.
+        messages: event.historyLoaded
+          ? session.messages.map((message) => {
+              const unfinished = message.pieces.some(
+                (piece) =>
+                  piece.type === "tool" &&
+                  ["pending", "in_progress"].includes(
+                    session.tools[piece.toolCallId]?.value.status ?? "",
+                  ),
+              );
+              return message.role === "assistant" &&
+                message.status?.type === "running" &&
+                !unfinished
+                ? {
+                    ...message,
+                    status: { type: "complete" as const, stopReason: "end_turn" as const },
+                  }
+                : message;
+            })
+          : session.messages,
         runState: "idle",
         error: undefined,
       }));

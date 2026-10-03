@@ -102,7 +102,7 @@ function acpToolData(artifact, argsValue, result) {
       const path = text(record(location).path);
       return path === void 0 ? [] : [path];
     }),
-    output: text(display.output) || (content.texts.length > 0 ? content.texts.join("\n") : resultText ?? fallbackContent.texts.join("\n")),
+    output: text(display.output) || resultText || (content.texts.length > 0 ? content.texts.join("\n") : resultText ?? fallbackContent.texts.join("\n")),
     diffs: content.diffs.length > 0 ? content.diffs : fallbackContent.diffs
   };
 }
@@ -176,7 +176,8 @@ var ensureMessage = (session, role, protocolMessageId) => {
 };
 var appendPiece = (session, messageId, piece) => patchMessage(session, messageId, (message) => ({
   ...message,
-  pieces: [...message.pieces, piece]
+  pieces: [...message.pieces, piece],
+  ...message.role === "assistant" ? { status: { type: "running" } } : {}
 }));
 var appendMessageNotification = (session, messageId, notification) => patchMessage(session, messageId, (message) => ({
   ...message,
@@ -401,6 +402,19 @@ function reduceAcpThreadState(state, event, extensions) {
         ...event.modes !== void 0 ? { modes: event.modes } : {},
         access: event.access ?? { mode: "read-write" },
         configOptions: event.configOptions ?? session.configOptions,
+        // A completed history replay is not an actively streaming response.
+        // Keep unfinished tools live, and retain explicit completion/error states.
+        messages: event.historyLoaded ? session.messages.map((message) => {
+          const unfinished = message.pieces.some(
+            (piece) => piece.type === "tool" && ["pending", "in_progress"].includes(
+              session.tools[piece.toolCallId]?.value.status ?? ""
+            )
+          );
+          return message.role === "assistant" && message.status?.type === "running" && !unfinished ? {
+            ...message,
+            status: { type: "complete", stopReason: "end_turn" }
+          } : message;
+        }) : session.messages,
         runState: "idle",
         error: void 0
       }));
@@ -1635,6 +1649,7 @@ var AcpThreadController = class {
       this.attachedSessions.add(sessionId);
       this.dispatch({
         type: "session.attached",
+        historyLoaded: !useResume,
         sessionId,
         info: snapshot.info,
         modes: response.modes,
@@ -1954,5 +1969,5 @@ var AcpThreadController = class {
 };
 
 export { AcpCapabilityError, AcpError, AcpInvalidWorkspaceError, AcpProjectionCache, AcpThreadController, AcpUnsupportedContentError, SdkAcpClientAdapter, acpToolData, buildClientCapabilities, buildSessionRequest, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, terminalToolDisplay, validateWorkspace };
-//# sourceMappingURL=chunk-YI5O2TG2.js.map
-//# sourceMappingURL=chunk-YI5O2TG2.js.map
+//# sourceMappingURL=chunk-CHDRDTEZ.js.map
+//# sourceMappingURL=chunk-CHDRDTEZ.js.map

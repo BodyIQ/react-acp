@@ -334,6 +334,7 @@ type AcpStateEvent = {
     sessionId: string;
 } | {
     type: "session.attached";
+    historyLoaded?: boolean;
     sessionId: string;
     info?: SessionInfo;
     modes?: SessionModeState | null;

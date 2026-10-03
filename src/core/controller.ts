@@ -608,6 +608,7 @@ export class AcpThreadController {
       this.attachedSessions.add(sessionId);
       this.dispatch({
         type: "session.attached",
+        historyLoaded: !useResume,
         sessionId,
         info: snapshot.info,
         modes: response.modes,

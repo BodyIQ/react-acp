@@ -108,3 +108,16 @@ test("partial and unknown artifacts cannot turn protocol objects into output", (
   assert.equal(acpToolData({ acp: { display: {} } }, {}, undefined).output, "");
   assert.equal(acpToolData({}, {}, "plain output").output, "plain output");
 });
+
+test("prefers raw result text over presentation markup in ACP content", () => {
+  const view = acpToolData(
+    {
+      acp: {
+        content: [{ type: "content", content: { type: "text", text: "```console\nhello\n```" } }],
+      },
+    },
+    {},
+    "hello",
+  );
+  assert.equal(view.output, "hello");
+});

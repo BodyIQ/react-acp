@@ -82,6 +82,7 @@ export function acpToolData(artifact: unknown, argsValue: unknown, result: unkno
     }),
     output:
       text(display.output) ||
+      resultText ||
       (content.texts.length > 0
         ? content.texts.join("\n")
         : (resultText ?? fallbackContent.texts.join("\n"))),

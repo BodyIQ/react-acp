@@ -1,5 +1,5 @@
 import { ComponentPropsWithoutRef, ReactElement, ReactNode } from 'react';
-import { y as AcpSessionState, b as AcpAuthHookState, h as AcpConnectionHookState, q as AcpPermissionsHookState, u as AcpRuntimeExtras, D as AcpThreadState } from './types-DiexR_zv.js';
+import { y as AcpSessionState, b as AcpAuthHookState, h as AcpConnectionHookState, q as AcpPermissionsHookState, u as AcpRuntimeExtras, D as AcpThreadState } from './types-BEJXgqrE.js';
 
 /** Returns the ACP-specific commands and state attached to the current runtime. */
 declare const useAcpRuntimeExtras: () => AcpRuntimeExtras;
