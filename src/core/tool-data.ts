@@ -68,6 +68,8 @@ export function acpToolData(artifact: unknown, argsValue: unknown, result: unkno
   );
   const resultText =
     text(result) ?? (streams.length > 0 ? streams.join("") : text(rawResult.output));
+  // A supplied result is authoritative, even if empty. Streamed deltas can be
+  // incomplete; never append the full result to the already accumulated text.
   return {
     title: text(acp.title),
     command: command(args.command) ?? command(args.cmd),
@@ -81,11 +83,9 @@ export function acpToolData(artifact: unknown, argsValue: unknown, result: unkno
       return path === undefined ? [] : [path];
     }),
     output:
-      text(display.output) ||
-      resultText ||
-      (content.texts.length > 0
-        ? content.texts.join("\n")
-        : (resultText ?? fallbackContent.texts.join("\n"))),
+      resultText ??
+      (text(display.output) ||
+        (content.texts.length > 0 ? content.texts.join("\n") : fallbackContent.texts.join("\n"))),
     diffs: content.diffs.length > 0 ? content.diffs : fallbackContent.diffs,
   };
 }

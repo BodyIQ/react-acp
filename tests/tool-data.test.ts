@@ -8,6 +8,17 @@ const notification = (meta: Record<string, unknown>): SessionNotification => ({
   update: { sessionUpdate: "tool_call_update", toolCallId: "exec", _meta: meta },
 });
 
+test("an authoritative result replaces partial streamed output, including an empty result", () => {
+  const artifact = { acp: { display: { output: "END\n" } } };
+  assert.equal(
+    acpToolData(artifact, {}, { output: "START\nEND\n", exit_code: 7 }).output,
+    "START\nEND\n",
+  );
+  assert.equal(acpToolData(artifact, {}, { output: "" }).output, "");
+  assert.equal(acpToolData(artifact, {}, undefined).output, "END\n");
+  assert.equal(acpToolData(artifact, {}, { exit_code: 7 }).output, "END\n");
+});
+
 test("terminal references render output accumulated by the ACP runtime", () => {
   const artifact = {
     acp: {

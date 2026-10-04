@@ -1,6 +1,6 @@
-import { acpExtras } from './chunk-2MKBAWKQ.js';
-export { AcpAuthMethods, AcpCommandMenu, AcpConfigOptions, AcpDataPart, AcpDiff, AcpModeSelect, AcpPermissionList, AcpPlan, AcpResource, AcpTerminal, AcpToolArtifact, AcpUnsupported, AcpUsage, useAcpAuth, useAcpCommands, useAcpConfigOptions, useAcpConnection, useAcpModes, useAcpPermissions, useAcpPlan, useAcpRuntimeExtras, useAcpSession, useAcpThreadState, useAcpUsage } from './chunk-2MKBAWKQ.js';
-import { AcpThreadController, AcpCapabilityError, AcpProjectionCache, projectAcpSessionRepository, hasAgentCapability } from './chunk-CHDRDTEZ.js';
+import { acpExtras } from './chunk-TVS2VDHC.js';
+export { AcpAuthMethods, AcpCommandMenu, AcpConfigOptions, AcpDataPart, AcpDiff, AcpModeSelect, AcpPermissionList, AcpPlan, AcpResource, AcpTerminal, AcpToolArtifact, AcpUnsupported, AcpUsage, useAcpAuth, useAcpCommands, useAcpConfigOptions, useAcpConnection, useAcpModes, useAcpPermissions, useAcpPlan, useAcpRuntimeExtras, useAcpSession, useAcpThreadState, useAcpUsage } from './chunk-TVS2VDHC.js';
+import { AcpThreadController, AcpCapabilityError, AcpProjectionCache, projectAcpSessionRepository, hasAgentCapability } from './chunk-N3NJ5ZY6.js';
 import { useExternalStoreRuntime, pickExternalStoreSharedOptions } from '@assistant-ui/react';
 import { useRef, useState, useEffect, useMemo, useSyncExternalStore } from 'react';
 

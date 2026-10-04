@@ -102,7 +102,7 @@ function acpToolData(artifact, argsValue, result) {
       const path = text(record(location).path);
       return path === void 0 ? [] : [path];
     }),
-    output: text(display.output) || resultText || (content.texts.length > 0 ? content.texts.join("\n") : resultText ?? fallbackContent.texts.join("\n")),
+    output: resultText ?? (text(display.output) || (content.texts.length > 0 ? content.texts.join("\n") : fallbackContent.texts.join("\n"))),
     diffs: content.diffs.length > 0 ? content.diffs : fallbackContent.diffs
   };
 }
@@ -1969,5 +1969,5 @@ var AcpThreadController = class {
 };
 
 export { AcpCapabilityError, AcpError, AcpInvalidWorkspaceError, AcpProjectionCache, AcpThreadController, AcpUnsupportedContentError, SdkAcpClientAdapter, acpToolData, buildClientCapabilities, buildSessionRequest, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, terminalToolDisplay, validateWorkspace };
-//# sourceMappingURL=chunk-CHDRDTEZ.js.map
-//# sourceMappingURL=chunk-CHDRDTEZ.js.map
+//# sourceMappingURL=chunk-N3NJ5ZY6.js.map
+//# sourceMappingURL=chunk-N3NJ5ZY6.js.map
