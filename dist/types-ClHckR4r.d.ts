@@ -225,6 +225,14 @@ type AcpPermissionRecord = {
 };
 /** Lifecycle state of the current prompt turn in an ACP session. */
 type AcpSessionRunState = "idle" | "loading" | "running" | "cancelling" | "error";
+/** Authoritative turn lifecycle recovered from application-owned notifications. */
+type AcpTurnState = {
+    running: true;
+} | {
+    running: false;
+    stopReason?: StopReason;
+    error?: unknown;
+};
 /** Whether the current ACP attachment may mutate its native session. */
 type AcpSessionAccess = {
     /** Read-only attachments can display history but must not issue mutating requests. */
@@ -242,6 +250,8 @@ type AcpSessionAccessContext = {
 };
 /** Optional application-owned interpretations of opaque ACP extension metadata. */
 type AcpRuntimeExtensionAdapter = {
+    /** Recovers turn boundaries for reconnects, other clients, and background turns. */
+    turnState?(notification: SessionNotification): AcpTurnState | undefined;
     /** Resolves access from an attach response. Defaults to read-write. */
     sessionAccess?(context: AcpSessionAccessContext): AcpSessionAccess | undefined;
     /** Returns an application-defined grouping phase for one raw session notification. */
@@ -389,6 +399,11 @@ type AcpStateEvent = {
     type: "session.cancel_started";
     sessionId: string;
 } | {
+    type: "session.cancel_failed";
+    sessionId: string;
+    runState: AcpSessionRunState;
+    error: unknown;
+} | {
     type: "session.update";
     notification: SessionNotification;
 } | {
@@ -514,4 +529,4 @@ type AcpRuntime = AssistantRuntime;
 /** assistant-ui message shape produced by ACP projection. */
 type AcpProjectedMessage = ThreadMessageLike;
 
-export type { AcpRuntimeOptions as A, AcpStreamFactory as B, AcpTerminalServices as C, AcpThreadState as D, AcpToolCallRecord as E, AcpToolDisplay as F, AcpToolDisplayUpdate as G, AcpWorkspace as H, MaybePromise as M, AcpAdapterConnectOptions as a, AcpAuthHookState as b, AcpAuthenticationStatus as c, AcpClientAdapter as d, AcpClientConnection as e, AcpClientHandlers as f, AcpClientServices as g, AcpConnectionHookState as h, AcpConnectionSource as i, AcpConnectionStatus as j, AcpFileSystemServices as k, AcpMessagePiece as l, AcpMessageRecord as m, AcpMessageStatePatch as n, AcpMessageStatus as o, AcpPermissionRecord as p, AcpPermissionsHookState as q, AcpProjectedMessage as r, AcpRuntime as s, AcpRuntimeExtensionAdapter as t, AcpRuntimeExtras as u, AcpSessionAccess as v, AcpSessionAccessContext as w, AcpSessionRunState as x, AcpSessionState as y, AcpStateEvent as z };
+export type { AcpRuntimeOptions as A, AcpStreamFactory as B, AcpTerminalServices as C, AcpThreadState as D, AcpToolCallRecord as E, AcpToolDisplay as F, AcpToolDisplayUpdate as G, AcpTurnState as H, AcpWorkspace as I, MaybePromise as M, AcpAdapterConnectOptions as a, AcpAuthHookState as b, AcpAuthenticationStatus as c, AcpClientAdapter as d, AcpClientConnection as e, AcpClientHandlers as f, AcpClientServices as g, AcpConnectionHookState as h, AcpConnectionSource as i, AcpConnectionStatus as j, AcpFileSystemServices as k, AcpMessagePiece as l, AcpMessageRecord as m, AcpMessageStatePatch as n, AcpMessageStatus as o, AcpPermissionRecord as p, AcpPermissionsHookState as q, AcpProjectedMessage as r, AcpRuntime as s, AcpRuntimeExtensionAdapter as t, AcpRuntimeExtras as u, AcpSessionAccess as v, AcpSessionAccessContext as w, AcpSessionRunState as x, AcpSessionState as y, AcpStateEvent as z };

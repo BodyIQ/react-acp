@@ -342,6 +342,35 @@ const failAssistantMessage = (session: AcpSessionState, error: unknown): AcpSess
   }));
 };
 
+const applyTurnState = (
+  session: AcpSessionState,
+  notification: SessionNotification,
+  extensions?: AcpRuntimeExtensionAdapter,
+): AcpSessionState => {
+  const turn = extensions?.turnState?.(notification);
+  if (!turn) return session;
+  if (turn.running) {
+    // Local prompt_started and repeated info updates already belong to this turn.
+    if (session.runState === "running" || session.runState === "cancelling") return session;
+    return {
+      ...session,
+      runState: "running",
+      turn: session.turn + 1,
+      lastChunk: undefined,
+      lastAssistantMessageId: undefined,
+      error: undefined,
+    };
+  }
+  return {
+    ...(turn.error !== undefined
+      ? failAssistantMessage(session, turn.error)
+      : finalizeAssistantMessage(session, turn.stopReason ?? "end_turn")),
+    runState: "idle",
+    lastChunk: undefined,
+    error: turn.error,
+  };
+};
+
 /** Applies one connection, session, message, tool, or permission event. */
 export function reduceAcpThreadState(
   state: AcpThreadState,
@@ -414,6 +443,10 @@ export function reduceAcpThreadState(
               );
               return message.role === "assistant" &&
                 message.status?.type === "running" &&
+                !(
+                  ["running", "cancelling"].includes(session.runState) &&
+                  message.id === session.lastAssistantMessageId
+                ) &&
                 !unfinished
                 ? {
                     ...message,
@@ -422,8 +455,11 @@ export function reduceAcpThreadState(
                 : message;
             })
           : session.messages,
-        runState: "idle",
-        error: undefined,
+        runState:
+          session.runState === "running" || session.runState === "cancelling"
+            ? session.runState
+            : "idle",
+        error: session.error,
       }));
     case "session.committed":
       return {
@@ -522,9 +558,19 @@ export function reduceAcpThreadState(
         ...session,
         runState: "cancelling",
       }));
+    case "session.cancel_failed":
+      return updateSession(state, event.sessionId, (session) => ({
+        ...session,
+        runState: session.runState === "cancelling" ? event.runState : session.runState,
+        error: event.error,
+      }));
     case "session.update":
       return updateSession(state, event.notification.sessionId, (session) =>
-        reduceNotification(session, event.notification, extensions),
+        reduceNotification(
+          applyTurnState(session, event.notification, extensions),
+          event.notification,
+          extensions,
+        ),
       );
     case "message.optimistic":
       return updateSession(state, event.sessionId, (session) =>

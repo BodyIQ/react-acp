@@ -127,6 +127,7 @@ export class AcpThreadController {
   private readonly attachmentPromises = new Map<string, Promise<void>>();
   private readonly loadingSessions = new Map<string, SessionNotification[]>();
   private readonly pendingOutbound = new Map<string, PendingOutbound>();
+  private readonly localTurns = new Map<string, symbol>();
   private prepareSessionPromise?: Promise<string>;
   private connectionGeneration = 0;
   private selectionGeneration = 0;
@@ -151,7 +152,13 @@ export class AcpThreadController {
   };
 
   private dispatch(event: AcpStateEvent): void {
-    this.state = reduceAcpThreadState(this.state, event, this.options.extensions);
+    // A locally sent prompt is settled by its response; observer markers must
+    // not enable another send before that request has completed.
+    const extensions =
+      event.type === "session.update" && this.localTurns.has(event.notification.sessionId)
+        ? { ...this.options.extensions, turnState: undefined }
+        : this.options.extensions;
+    this.state = reduceAcpThreadState(this.state, event, extensions);
     for (const listener of this.listeners) listener();
   }
 
@@ -685,6 +692,8 @@ export class AcpThreadController {
     if (session?.runState === "running" || session?.runState === "cancelling") {
       throw new AcpError("ACP_TURN_RUNNING", "An ACP prompt turn is already running.");
     }
+    const localTurn = Symbol();
+    this.localTurns.set(sessionId, localTurn);
     this.dispatch({ type: "session.prompt_started", sessionId });
     try {
       const response = await this.runAgentRequest(() =>
@@ -698,6 +707,8 @@ export class AcpThreadController {
       this.compactInactiveSessions();
       this.reportError(error);
       throw error;
+    } finally {
+      if (this.localTurns.get(sessionId) === localTurn) this.localTurns.delete(sessionId);
     }
   }
 
@@ -831,9 +842,16 @@ export class AcpThreadController {
 
   /** Cancels pending permissions and the active prompt turn for a session. */
   async cancel(sessionId: string): Promise<void> {
+    const runState = this.state.sessions[sessionId]?.runState ?? "idle";
     this.dispatch({ type: "session.cancel_started", sessionId });
-    await this.cancelPendingPermissions(sessionId);
-    await this.requireConnection().cancel(sessionId);
+    try {
+      await this.cancelPendingPermissions(sessionId);
+      await this.requireConnection().cancel(sessionId);
+    } catch (error) {
+      this.dispatch({ type: "session.cancel_failed", sessionId, runState, error });
+      this.reportError(error);
+      throw error;
+    }
   }
 
   private async cancelPendingPermissions(sessionId: string): Promise<void> {
@@ -961,6 +979,7 @@ export class AcpThreadController {
     this.attachedSessions.clear();
     this.attachmentPromises.clear();
     this.loadingSessions.clear();
+    this.localTurns.clear();
     for (const waiter of this.permissionWaiters.values()) waiter.reject(reason);
     this.permissionWaiters.clear();
   }
