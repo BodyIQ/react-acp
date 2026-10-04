@@ -54,7 +54,21 @@ function readableContent(value: unknown): { texts: string[]; diffs: ToolDiff[] }
 }
 
 /** Decode the ACP artifact that react-acp preserves on an assistant-ui part. */
-export function acpToolData(artifact: unknown, argsValue: unknown, result: unknown) {
+export function acpToolData(
+  artifact: unknown,
+  argsValue: unknown,
+  result: unknown,
+): {
+  title: string | undefined;
+  command: string | undefined;
+  path: string | undefined;
+  query: string | undefined;
+  cwd: string | undefined;
+  exitCode: number | undefined;
+  locations: string[];
+  output: string;
+  diffs: ToolDiff[];
+} {
   const acp = record(record(artifact).acp);
   const args = record(argsValue);
   const display = record(acp.display);

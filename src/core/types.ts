@@ -301,6 +301,10 @@ export type AcpPermissionRecord = {
 /** Lifecycle state of the current prompt turn in an ACP session. */
 export type AcpSessionRunState = "idle" | "loading" | "running" | "cancelling" | "error";
 
+/** Authoritative turn lifecycle recovered from application-owned notifications. */
+export type AcpTurnState =
+  { running: true } | { running: false; stopReason?: StopReason; error?: unknown };
+
 /** Whether the current ACP attachment may mutate its native session. */
 export type AcpSessionAccess = {
   /** Read-only attachments can display history but must not issue mutating requests. */
@@ -316,6 +320,8 @@ export type AcpSessionAccessContext =
 
 /** Optional application-owned interpretations of opaque ACP extension metadata. */
 export type AcpRuntimeExtensionAdapter = {
+  /** Recovers turn boundaries for reconnects, other clients, and background turns. */
+  turnState?(notification: SessionNotification): AcpTurnState | undefined;
   /** Resolves access from an attach response. Defaults to read-write. */
   sessionAccess?(context: AcpSessionAccessContext): AcpSessionAccess | undefined;
   /** Returns an application-defined grouping phase for one raw session notification. */
@@ -428,6 +434,12 @@ export type AcpStateEvent =
     }
   | { type: "session.turn_failed"; sessionId: string; error: unknown }
   | { type: "session.cancel_started"; sessionId: string }
+  | {
+      type: "session.cancel_failed";
+      sessionId: string;
+      runState: AcpSessionRunState;
+      error: unknown;
+    }
   | { type: "session.update"; notification: SessionNotification }
   | {
       type: "message.optimistic";

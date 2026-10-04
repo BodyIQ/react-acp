@@ -73,6 +73,13 @@ function AgentRuntime({ agent, workspace, children }: Props) {
 `_meta`：`sessionAccess` 决定 load/resume 后的读写能力，`messagePhase` 决定消息分段。
 本包默认不识别任何厂商命名空间，未知字段和原始 `_meta` 始终保留。
 
+`turnState` interprets application-owned turn markers as `{ running: true }` or
+`{ running: false, stopReason?, error? }`. This lets a reconnected browser or an
+observer use the standard assistant-ui running, send-disabled, and cancellation
+state. Replayed active turns remain running after history loads. Locally sent
+prompts still finish through their `session/prompt` response, so a notification
+cannot enable another send while the original request is outstanding.
+
 ## 入口与 API
 
 | 入口                           | 适用场景                         | 主要导出                                                                                 |

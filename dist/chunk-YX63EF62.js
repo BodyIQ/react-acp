@@ -353,6 +353,27 @@ var failAssistantMessage = (session, error) => {
     status: { type: "incomplete", error }
   }));
 };
+var applyTurnState = (session, notification, extensions) => {
+  const turn = extensions?.turnState?.(notification);
+  if (!turn) return session;
+  if (turn.running) {
+    if (session.runState === "running" || session.runState === "cancelling") return session;
+    return {
+      ...session,
+      runState: "running",
+      turn: session.turn + 1,
+      lastChunk: void 0,
+      lastAssistantMessageId: void 0,
+      error: void 0
+    };
+  }
+  return {
+    ...turn.error !== void 0 ? failAssistantMessage(session, turn.error) : finalizeAssistantMessage(session, turn.stopReason ?? "end_turn"),
+    runState: "idle",
+    lastChunk: void 0,
+    error: turn.error
+  };
+};
 function reduceAcpThreadState(state, event, extensions) {
   switch (event.type) {
     case "connection.status":
@@ -410,13 +431,13 @@ function reduceAcpThreadState(state, event, extensions) {
               session.tools[piece.toolCallId]?.value.status ?? ""
             )
           );
-          return message.role === "assistant" && message.status?.type === "running" && !unfinished ? {
+          return message.role === "assistant" && message.status?.type === "running" && !(["running", "cancelling"].includes(session.runState) && message.id === session.lastAssistantMessageId) && !unfinished ? {
             ...message,
             status: { type: "complete", stopReason: "end_turn" }
           } : message;
         }) : session.messages,
-        runState: "idle",
-        error: void 0
+        runState: session.runState === "running" || session.runState === "cancelling" ? session.runState : "idle",
+        error: session.error
       }));
     case "session.committed":
       return {
@@ -510,11 +531,21 @@ function reduceAcpThreadState(state, event, extensions) {
         ...session,
         runState: "cancelling"
       }));
+    case "session.cancel_failed":
+      return updateSession(state, event.sessionId, (session) => ({
+        ...session,
+        runState: session.runState === "cancelling" ? event.runState : session.runState,
+        error: event.error
+      }));
     case "session.update":
       return updateSession(
         state,
         event.notification.sessionId,
-        (session) => reduceNotification(session, event.notification, extensions)
+        (session) => reduceNotification(
+          applyTurnState(session, event.notification, extensions),
+          event.notification,
+          extensions
+        )
       );
     case "message.optimistic":
       return updateSession(
@@ -1263,6 +1294,7 @@ var AcpThreadController = class {
   attachmentPromises = /* @__PURE__ */ new Map();
   loadingSessions = /* @__PURE__ */ new Map();
   pendingOutbound = /* @__PURE__ */ new Map();
+  localTurns = /* @__PURE__ */ new Map();
   prepareSessionPromise;
   connectionGeneration = 0;
   selectionGeneration = 0;
@@ -1276,7 +1308,8 @@ var AcpThreadController = class {
     return () => this.listeners.delete(listener);
   };
   dispatch(event) {
-    this.state = reduceAcpThreadState(this.state, event, this.options.extensions);
+    const extensions = event.type === "session.update" && this.localTurns.has(event.notification.sessionId) ? { ...this.options.extensions, turnState: void 0 } : this.options.extensions;
+    this.state = reduceAcpThreadState(this.state, event, extensions);
     for (const listener of this.listeners) listener();
   }
   sessionHasResidentState(sessionId) {
@@ -1721,6 +1754,8 @@ var AcpThreadController = class {
     if (session?.runState === "running" || session?.runState === "cancelling") {
       throw new AcpError("ACP_TURN_RUNNING", "An ACP prompt turn is already running.");
     }
+    const localTurn = /* @__PURE__ */ Symbol();
+    this.localTurns.set(sessionId, localTurn);
     this.dispatch({ type: "session.prompt_started", sessionId });
     try {
       const response = await this.runAgentRequest(
@@ -1734,6 +1769,8 @@ var AcpThreadController = class {
       this.compactInactiveSessions();
       this.reportError(error);
       throw error;
+    } finally {
+      if (this.localTurns.get(sessionId) === localTurn) this.localTurns.delete(sessionId);
     }
   }
   /** Serializes and sends an assistant-ui user message with optimistic projection. */
@@ -1849,9 +1886,16 @@ var AcpThreadController = class {
   }
   /** Cancels pending permissions and the active prompt turn for a session. */
   async cancel(sessionId) {
+    const runState = this.state.sessions[sessionId]?.runState ?? "idle";
     this.dispatch({ type: "session.cancel_started", sessionId });
-    await this.cancelPendingPermissions(sessionId);
-    await this.requireConnection().cancel(sessionId);
+    try {
+      await this.cancelPendingPermissions(sessionId);
+      await this.requireConnection().cancel(sessionId);
+    } catch (error) {
+      this.dispatch({ type: "session.cancel_failed", sessionId, runState, error });
+      this.reportError(error);
+      throw error;
+    }
   }
   async cancelPendingPermissions(sessionId) {
     for (const [toolCallId, permission] of Object.entries(
@@ -1957,6 +2001,7 @@ var AcpThreadController = class {
     this.attachedSessions.clear();
     this.attachmentPromises.clear();
     this.loadingSessions.clear();
+    this.localTurns.clear();
     for (const waiter of this.permissionWaiters.values()) waiter.reject(reason);
     this.permissionWaiters.clear();
   }
@@ -1969,5 +2014,5 @@ var AcpThreadController = class {
 };
 
 export { AcpCapabilityError, AcpError, AcpInvalidWorkspaceError, AcpProjectionCache, AcpThreadController, AcpUnsupportedContentError, SdkAcpClientAdapter, acpToolData, buildClientCapabilities, buildSessionRequest, createAcpSessionState, createAcpThreadState, hasAgentCapability, hasCompleteTerminalServices, projectAcpSessionMessages, projectAcpSessionRepository, projectAcpThreadMessages, projectAcpThreadRepository, reduceAcpThreadState, serializeAppendMessage, terminalToolDisplay, validateWorkspace };
-//# sourceMappingURL=chunk-CHDRDTEZ.js.map
-//# sourceMappingURL=chunk-CHDRDTEZ.js.map
+//# sourceMappingURL=chunk-YX63EF62.js.map
+//# sourceMappingURL=chunk-YX63EF62.js.map
